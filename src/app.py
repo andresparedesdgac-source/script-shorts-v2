@@ -12,6 +12,11 @@ from dotenv import load_dotenv
 
 from src.templates.plantillas import obtener_plataformas, PLANTILLAS, TONOS
 from src.generator.motor import generar_script
+from src.security.security import (
+    proteger_generacion, registrar_generacion_exitosa,
+    verificar_login, registrar_login_fallido,
+    mostrar_estado_seguridad, sanitizar_texto
+)
 from src.exporters.exportar import exportar_txt, exportar_todos_txt
 from src.auth.auth import (
     inicializar_sesion, esta_autenticado, obtener_usuario,
@@ -258,12 +263,18 @@ def mostrar_login():
 
         if st.button("✦ Iniciar sesión", type="primary", use_container_width=True):
             if email and password:
-                with st.spinner("Verificando..."):
-                    resultado = login_email(email, password)
-                if resultado["ok"]:
-                    st.rerun()
+                # ── Verificar rate limiting de login ──
+                puede, msg_limite = verificar_login(email)
+                if not puede:
+                    st.error(msg_limite)
                 else:
-                    st.error(resultado["mensaje"])
+                    with st.spinner("Verificando..."):
+                        resultado = login_email(email, password)
+                    if resultado["ok"]:
+                        st.rerun()
+                    else:
+                        registrar_login_fallido(email)
+                        st.error(resultado["mensaje"])
             else:
                 st.warning("Completa todos los campos.")
 
@@ -347,6 +358,8 @@ def mostrar_app():
             """, unsafe_allow_html=True)
 
         st.markdown("<div style='margin-top:2rem;'></div>", unsafe_allow_html=True)
+        mostrar_estado_seguridad(usuario["id"])
+        st.markdown("<div style='margin-top:1rem;'></div>", unsafe_allow_html=True)
         if st.button("⎋  Cerrar sesión", type="secondary", use_container_width=True):
             cerrar_sesion()
 
@@ -438,13 +451,23 @@ def mostrar_app():
                 if not os.getenv("ANTHROPIC_API_KEY"):
                     st.error("Configura tu API Key de Anthropic en el sidebar.")
                 else:
-                    try:
-                        if modo == "Una plataforma":
+                    # ── Validación de seguridad ──
+                    puede_proceder, msg_seguridad = proteger_generacion(
+                        usuario["id"], tema, audiencia
+                    )
+                    if not puede_proceder:
+                        st.error(msg_seguridad)
+                    else:
+                        tema = sanitizar_texto(tema)
+                        audiencia = sanitizar_texto(audiencia)
+                        try:
+                            if modo == "Una plataforma":
                             with st.spinner(f"Generando script para {plataforma_seleccionada}..."):
                                 script = generar_script(tema=tema, plataforma=plataforma_seleccionada,
                                     tono=tono, audiencia=audiencia)
                             guardar_script(usuario["id"], tema, plataforma_seleccionada, tono, audiencia, script)
                             incrementar_uso(usuario["id"])
+                            registrar_generacion_exitosa(usuario["id"])
 
                             st.markdown(f"""
                             <div style='display:flex; align-items:center; gap:10px; margin-bottom:1rem;'>
