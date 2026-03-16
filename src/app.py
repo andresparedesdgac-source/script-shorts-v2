@@ -204,14 +204,15 @@ def crear_checkout_url(plan, usuario_id, usuario_email):
         import stripe
         stripe.api_key = STRIPE_SECRET_KEY
         price_id = STRIPE_BASIC_PRICE_ID if plan == "basic" else STRIPE_PRO_PRICE_ID
+        app_url = os.getenv("APP_URL", "http://localhost:8501")
         session = stripe.checkout.Session.create(
             payment_method_types=["card"],
             mode="subscription",
             line_items=[{"price": price_id, "quantity": 1}],
             customer_email=usuario_email,
             metadata={"user_id": usuario_id, "plan": plan},
-            success_url="http://localhost:8501?pago=exitoso&plan=" + plan,
-            cancel_url="http://localhost:8501?pago=cancelado",
+            success_url=f"{app_url}?pago=exitoso&plan={plan}",
+            cancel_url=f"{app_url}?pago=cancelado",
         )
         return session.url
     except Exception as e:
