@@ -462,57 +462,58 @@ def mostrar_app():
                         audiencia = sanitizar_texto(audiencia)
                         try:
                             if modo == "Una plataforma":
-                            with st.spinner(f"Generando script para {plataforma_seleccionada}..."):
-                                script = generar_script(tema=tema, plataforma=plataforma_seleccionada,
-                                    tono=tono, audiencia=audiencia)
-                            guardar_script(usuario["id"], tema, plataforma_seleccionada, tono, audiencia, script)
-                            incrementar_uso(usuario["id"])
-                            registrar_generacion_exitosa(usuario["id"])
+                                with st.spinner(f"Generando script para {plataforma_seleccionada}..."):
+                                    script = generar_script(tema=tema, plataforma=plataforma_seleccionada,
+                                        tono=tono, audiencia=audiencia)
+                                guardar_script(usuario["id"], tema, plataforma_seleccionada, tono, audiencia, script)
+                                incrementar_uso(usuario["id"])
+                                registrar_generacion_exitosa(usuario["id"])
 
-                            st.markdown(f"""
-                            <div style='display:flex; align-items:center; gap:10px; margin-bottom:1rem;'>
-                                <span style='background:rgba(232,130,12,0.12); border:1px solid rgba(232,130,12,0.3);
-                                     color:#F5A623; font-size:0.8rem; font-weight:600; padding:4px 12px;
-                                     border-radius:20px; text-transform:uppercase;'>{plataforma_seleccionada}</span>
-                            </div>
-                            """, unsafe_allow_html=True)
-                            st.markdown('<div class="script-output">', unsafe_allow_html=True)
-                            st.markdown(script)
-                            st.markdown('</div>', unsafe_allow_html=True)
+                                st.markdown(f"""
+                                <div style='display:flex; align-items:center; gap:10px; margin-bottom:1rem;'>
+                                    <span style='background:rgba(232,130,12,0.12); border:1px solid rgba(232,130,12,0.3);
+                                         color:#F5A623; font-size:0.8rem; font-weight:600; padding:4px 12px;
+                                         border-radius:20px; text-transform:uppercase;'>{plataforma_seleccionada}</span>
+                                </div>
+                                """, unsafe_allow_html=True)
+                                st.markdown('<div class="script-output">', unsafe_allow_html=True)
+                                st.markdown(script)
+                                st.markdown('</div>', unsafe_allow_html=True)
 
-                            ruta_base = os.path.join(
-                                os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "outputs")
-                            exportar_txt(script, plataforma_seleccionada, tema, ruta_base)
-                            col_msg, col_dl = st.columns([2, 1])
-                            with col_msg:
-                                st.success("✓ Script guardado en tu historial")
-                            with col_dl:
-                                st.download_button("⬇ Descargar TXT", data=script,
-                                    file_name=f"script-{plataforma_seleccionada.lower().replace(' ','-')}.txt",
-                                    mime="text/plain", use_container_width=True)
-                        else:
-                            resultados = {}
-                            barra = st.progress(0, text="Preparando...")
-                            plataformas = obtener_plataformas()
-                            for i, plat in enumerate(plataformas):
-                                barra.progress(i / len(plataformas), text=f"Generando {plat}...")
-                                resultados[plat] = generar_script(tema=tema, plataforma=plat,
-                                    tono=tono, audiencia=audiencia)
-                                guardar_script(usuario["id"], tema, plat, tono, audiencia, resultados[plat])
-                            incrementar_uso(usuario["id"])
-                            barra.progress(1.0, text="✦ Todos los scripts generados")
-                            st.success(f"✓ {len(resultados)} scripts guardados")
-                            tabs = st.tabs(list(resultados.keys()))
-                            for tab, (plat, script) in zip(tabs, resultados.items()):
-                                with tab:
-                                    st.markdown('<div class="script-output">', unsafe_allow_html=True)
-                                    st.markdown(script)
-                                    st.markdown('</div>', unsafe_allow_html=True)
-                                    st.download_button(f"⬇ {plat}", data=script,
-                                        file_name=f"script-{plat.lower().replace(' ','-')}.txt",
-                                        mime="text/plain", key=f"dl_{plat}")
-                    except Exception as e:
-                        st.error(f"Error al generar: {e}")
+                                ruta_base = os.path.join(
+                                    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "outputs")
+                                exportar_txt(script, plataforma_seleccionada, tema, ruta_base)
+                                col_msg, col_dl = st.columns([2, 1])
+                                with col_msg:
+                                    st.success("✓ Script guardado en tu historial")
+                                with col_dl:
+                                    st.download_button("⬇ Descargar TXT", data=script,
+                                        file_name=f"script-{plataforma_seleccionada.lower().replace(' ','-')}.txt",
+                                        mime="text/plain", use_container_width=True)
+                            else:
+                                resultados = {}
+                                barra = st.progress(0, text="Preparando...")
+                                plataformas = obtener_plataformas()
+                                for i, plat in enumerate(plataformas):
+                                    barra.progress(i / len(plataformas), text=f"Generando {plat}...")
+                                    resultados[plat] = generar_script(tema=tema, plataforma=plat,
+                                        tono=tono, audiencia=audiencia)
+                                    guardar_script(usuario["id"], tema, plat, tono, audiencia, resultados[plat])
+                                incrementar_uso(usuario["id"])
+                                registrar_generacion_exitosa(usuario["id"])
+                                barra.progress(1.0, text="✦ Todos los scripts generados")
+                                st.success(f"✓ {len(resultados)} scripts guardados")
+                                tabs = st.tabs(list(resultados.keys()))
+                                for tab, (plat, script) in zip(tabs, resultados.items()):
+                                    with tab:
+                                        st.markdown('<div class="script-output">', unsafe_allow_html=True)
+                                        st.markdown(script)
+                                        st.markdown('</div>', unsafe_allow_html=True)
+                                        st.download_button(f"⬇ {plat}", data=script,
+                                            file_name=f"script-{plat.lower().replace(' ','-')}.txt",
+                                            mime="text/plain", key=f"dl_{plat}")
+                        except Exception as e:
+                            st.error(f"Error al generar: {e}")
 
     # ════════════════════════════════════════
     # TAB 2: HISTORIAL
